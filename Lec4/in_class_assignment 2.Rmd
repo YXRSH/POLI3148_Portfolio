@@ -1,0 +1,159 @@
+---
+title: "in class assignment 2"
+author: "Yang Xinrui"
+date: 
+output: 
+  html_document: default
+  pdf_document: default
+  md_document: default
+knit: (function(inputFile, encoding){rmarkdown::render(inputFile, encoding = encoding, output_format = "all", knit_root_dir = getwd())})
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+d <- read_csv("_DataPublic_/vdem/1984_2022/vdem_1984_2022_external.csv")
+```
+
+
+# 1. Codebook lookup.
+## i. What indicators regarding the quality of education are available in the V-Dem datasets? 
+Education 15+ (e_peaveduc) ; Educational inequality, Gini (e_peedgini)
+
+## ii. What are the data’s coverage (i.e., for which countries and years do we have data?)
+
+```{r}
+# countries
+d |> select(country_name) |> distinct()
+```
+
+```{r}
+# years
+d |> select(year) |> distinct()
+```
+
+## iii. What are their sources? Provide the link to least 1 source.
+Clio Infra (clio-infra.eu)
+
+
+# 2. Subset by columns
+## i. Create a dataset containing only the country-year identifiers and indicators of education quality.
+
+```{r}
+d_edu <- d |> select(country_name, country_id, year, e_peaveduc, e_peedgini) |> distinct()
+
+d_edu
+```
+
+## ii. Rename the columns of education quality to make them informative.
+
+```{r}
+d_edu |>
+  rename("Education" = "e_peaveduc", "Gini" = "e_peedgini",
+         "Country" = "country_name", "ID" = "country_id",
+         "Year" = "year")
+
+
+d_edu <- d_edu |>
+  rename("Education" = "e_peaveduc", "Gini" = "e_peedgini",
+         "Country" = "country_name", "ID" = "country_id",
+         "Year" = "year")
+
+d_edu
+```
+
+# 3. Subset by rows 
+## i. List 5 countries-years that have the highest education level among its population.
+```{r}
+d_edu |> slice_max(order_by = Education, n =5)
+```
+
+## ii. List 5 countries-years that suffer from the most severe inequality in education.
+
+```{r}
+d_edu |> slice_min(order_by = Gini, n =5)
+```
+
+# 4. Summarize the data
+## i. Check data availability: For which countries and years are the indicators of education quality available?
+```{r}
+d_edu |>
+  mutate(GDP_missing = is.na(Education), .after = Education) |>
+  group_by(Country) |>
+  summarise(N_GDP_missing = sum(GDP_missing))
+```
+
+```{r}
+d_edu |>
+  mutate(GDP_missing = is.na(Gini), .after = Gini) |>
+  group_by(Country) |>
+  summarise(N_GDP_missing = sum(GDP_missing))
+```
+
+## ii. Create two types of country-level indicators of education quality
+### a. Average level of education quality from 1984 to 2022
+```{r}
+d_edu |> 
+  group_by(Country) |>
+  summarise(Education_average = mean(Education, na.rm = TRUE)) |>
+  arrange(Country)
+```
+### b. Change of education quality from 1984 to 2022
+```{r}
+d_edu |> 
+  filter(Year >= 1984 & Year <= 2022) |>
+  group_by(Country) |>
+  arrange(Year) |>
+  summarise(Education_growth_2022_1984 = (last(Education) - first(Education)) / first(Education)) |>
+  ungroup() |>
+  arrange(Country)
+```
+## iii. Examine the data and briefly discuss: Which countries perform the best and the worst in terms of education quality in the past four decades?
+```{r}
+d_edu |> 
+  group_by(Country) |>
+  summarise(Education_average = mean(Education, na.rm = TRUE)) |>
+  arrange(Education_average)
+```
+
+```{r}
+d_edu |> 
+  group_by(Country) |>
+  summarise(Education_average = mean(Education, na.rm = TRUE)) |>
+  arrange(desc(Education_average))
+```
+
+```{r}
+d_edu |> 
+  filter(Year >= 1984 & Year <= 2022) |>
+  group_by(Country) |>
+  arrange(Year) |>
+  summarise(Education_growth_2022_1984 = (last(Education) - first(Education)) / first(Education)) |>
+  ungroup() |>
+  arrange(Education_growth_2022_1984)
+```
+
+```{r}
+d_edu |> 
+  filter(Year >= 1984 & Year <= 2022) |>
+  group_by(Country) |>
+  arrange(Year) |>
+  summarise(Education_growth_2022_1984 = (last(Education) - first(Education)) / first(Education)) |>
+  ungroup() |>
+  arrange(desc(Education_growth_2022_1984))
+```
+
+
+
+
+
+
+
+
+
+
